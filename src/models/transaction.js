@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
+const transactionSchema = new mongoose.Schema(
   {
     title: {
       type: String,
@@ -25,6 +25,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-const User = mongoose.model("User", userSchema);
+const transactionModel = mongoose.model("Transaction", transactionSchema);
 
-module.exports = User;
+module.exports = transactionModel;

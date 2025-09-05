@@ -1,10 +1,10 @@
 const express = require("express");
-const userModel = require("../models/user.model");
+const transactionModel = require("../models/transaction");
 
-const router = express.Router();
+const allTransactions = express.Router();
 
 // POST - cadastrar transação com title, amount, type e date
-router.post("/", async (req, res) => {
+allTransactions.post("/", async (req, res) => {
   try {
     const { title, amount, type, date } = req.body;
 
@@ -15,13 +15,25 @@ router.post("/", async (req, res) => {
       });
     }
 
+    // validação do amount
+    if (isNaN(amount) || amount <= 0) {
+      return res.status(400).json({
+        message: "Amount deve ser um número positivo",
+      });
+    }
+
     if (!["income", "expense"].includes(type)) {
       return res.status(400).json({
         message: "Type deve ser 'income' ou 'expense'",
       });
     }
 
-    const transaction = await userModel.create({ title, amount, type, date });
+    const transaction = await transactionModel.create({
+      title,
+      amount,
+      type,
+      date,
+    });
     res.status(201).json(transaction);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -29,9 +41,9 @@ router.post("/", async (req, res) => {
 });
 
 // GET - listar todas as transações
-router.get("/", async (req, res) => {
+allTransactions.get("/", async (req, res) => {
   try {
-    const transactions = await userModel.find().sort({ date: -1 });
+    const transactions = await transactionModel.find().sort({ date: -1 });
     res.json(transactions);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -39,9 +51,9 @@ router.get("/", async (req, res) => {
 });
 
 // GET - buscar transação por ID
-router.get("/:id", async (req, res) => {
+allTransactions.get("/:id", async (req, res) => {
   try {
-    const transaction = await userModel.findById(req.params.id);
+    const transaction = await transactionModel.findById(req.params.id);
     if (!transaction) {
       return res.status(404).json({ message: "Transação não encontrada" });
     }
@@ -52,11 +64,18 @@ router.get("/:id", async (req, res) => {
 });
 
 // PUT - atualizar transação
-router.put("/:id", async (req, res) => {
+allTransactions.put("/:id", async (req, res) => {
   try {
     const { title, amount, type, date } = req.body;
 
-    const transaction = await userModel.findByIdAndUpdate(
+    // validação do amount (se amount for fornecido)
+    if (amount !== undefined && (isNaN(amount) || amount <= 0)) {
+      return res.status(400).json({
+        message: "Amount deve ser um número positivo",
+      });
+    }
+
+    const transaction = await transactionModel.findByIdAndUpdate(
       req.params.id,
       { title, amount, type, date },
       { new: true, runValidators: true }
@@ -73,9 +92,9 @@ router.put("/:id", async (req, res) => {
 });
 
 // DELETE - deletar transação
-router.delete("/:id", async (req, res) => {
+allTransactions.delete("/:id", async (req, res) => {
   try {
-    const transaction = await userModel.findByIdAndDelete(req.params.id);
+    const transaction = await transactionModel.findByIdAndDelete(req.params.id);
     if (!transaction) {
       return res.status(404).json({ message: "Transação não encontrada" });
     }
@@ -86,9 +105,9 @@ router.delete("/:id", async (req, res) => {
 });
 
 // GET - resumo financeiro (receitas, despesas e saldo)
-router.get("/summary/balance", async (req, res) => {
+allTransactions.get("/summary/balance", async (req, res) => {
   try {
-    const transactions = await userModel.find();
+    const transactions = await transactionModel.find();
 
     const income = transactions
       .filter((t) => t.type === "income")
@@ -112,7 +131,7 @@ router.get("/summary/balance", async (req, res) => {
 });
 
 // GET - transações por tipo (income ou expense)
-router.get("/type/:type", async (req, res) => {
+allTransactions.get("/type/:type", async (req, res) => {
   try {
     const { type } = req.params;
 
@@ -122,7 +141,9 @@ router.get("/type/:type", async (req, res) => {
       });
     }
 
-    const transactions = await userModel.find({ type }).sort({ date: -1 });
+    const transactions = await transactionModel
+      .find({ type })
+      .sort({ date: -1 });
 
     res.json(transactions);
   } catch (error) {
@@ -131,7 +152,7 @@ router.get("/type/:type", async (req, res) => {
 });
 
 // GET - transações por período (usando query params)
-router.get("/period/range", async (req, res) => {
+allTransactions.get("/period/range", async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
@@ -141,7 +162,7 @@ router.get("/period/range", async (req, res) => {
       });
     }
 
-    const transactions = await userModel
+    const transactions = await transactionModel
       .find({
         date: {
           $gte: new Date(startDate),
@@ -156,4 +177,4 @@ router.get("/period/range", async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = allTransactions;

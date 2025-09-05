@@ -4,7 +4,7 @@ const app = express();
 app.use(express.json());
 
 // Importar e usar as rotas
-const transactionRoutes = require("../src/routes/model");
+const transactionRoutes = require("../src/controllers/transaction.controller");
 app.use("/api/transactions", transactionRoutes);
 
 app.get("/", (req, res) => {
